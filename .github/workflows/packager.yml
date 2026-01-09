@@ -7,7 +7,6 @@ on:
 
 jobs:
   build:
-    # Schimbăm pe 22.04 pentru a evita erorile de linker de la ora 09:20
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
@@ -16,15 +15,12 @@ jobs:
       - name: Install Compiler Tools
         run: |
           sudo apt-get update
-          # Instalăm clang și unelte de bază
-          sudo apt-get install -y clang unzip
-          # Descărcăm ldid manual pentru a evita eroarea de la ora 09:13
+          sudo apt-get install -y clang lld unzip
           sudo curl -L https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus7/ldid_linux_x86_64 -o /usr/local/bin/ldid
           sudo chmod +x /usr/local/bin/ldid
 
       - name: Setup iOS SDK
         run: |
-          # Folosim .zip pentru a evita eroarea de format de la ora 09:15
           mkdir -p sdks
           curl -L https://github.com/theos/sdks/archive/refs/heads/master.zip -o sdks.zip
           unzip -q sdks.zip -d sdks
@@ -32,15 +28,18 @@ jobs:
 
       - name: Compile Tweak.xm to Dylib
         run: |
-          # REZOLVARE EROARE 09:20: Forțăm linker-ul lld (intern Clang)
-          # Acest lucru elimină eroarea "unrecognised emulation mode"
+          # REZOLVARE EROARE 09:22: 
+          # 1. Adăugăm '-x objective-c++' ca să recunoască fișierul .xm ca cod sursă
+          # 2. Schimbăm '-lstdc++' cu '-lc++' care este standardul Apple
           clang++ -target arm64-apple-ios14.0 \
             -fuse-ld=lld \
             -dynamiclib \
             -isysroot ${{ env.SDK_PATH }} \
             -O2 -fno-modules -Wno-error \
+            -stdlib=libc++ \
             -framework Foundation -framework UIKit -framework CoreGraphics -framework QuartzCore \
             -I./template \
+            -x objective-c++ \
             -o OneStateMod.dylib \
             template/Tweak.xm
 
