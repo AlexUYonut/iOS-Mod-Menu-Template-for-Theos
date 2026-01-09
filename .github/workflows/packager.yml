@@ -40,7 +40,7 @@ jobs:
           export THEOS=~/theos
           SDK_PATH=$(ls -d ~/theos/sdks/iPhoneOS*.sdk | head -n 1)
           cd template
-          # Curățăm resturile de la build-urile anterioare eșuate
+          # Curățăm cache-ul anterior care a dat eroare
           rm -rf .theos
           # Compilăm cu noul toolchain
           make package FINALPACKAGE=1 SYSROOT=$SDK_PATH
