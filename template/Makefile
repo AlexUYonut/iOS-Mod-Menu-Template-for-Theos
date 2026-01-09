@@ -40,6 +40,7 @@ SCLALERTVIEW_SRC =  $(wildcard SCLAlertView/*.m)
 MENU_SRC = Menu.mm
 
 include $(THEOS)/makefiles/common.mk
+GO_EASY_ON_ME = 1
 
 TWEAK_NAME = OneStateMod
 
