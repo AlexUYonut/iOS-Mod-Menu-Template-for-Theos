@@ -23,10 +23,11 @@ jobs:
           echo "THEOS=~/theos" >> $GITHUB_ENV
           echo "~/theos/bin" >> $GITHUB_PATH
 
-      - name: Build Package
+        - name: Build Package
         run: |
           export THEOS=~/theos
-          make package FINALPACKAGE=1
+          cd template && make package FINALPACKAGE=1
+
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
