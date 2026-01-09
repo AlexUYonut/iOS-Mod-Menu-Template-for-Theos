@@ -19,15 +19,14 @@ jobs:
 
       - name: Setup Theos and SDK
         run: |
-          # Instalăm Theos
           git clone --recursive https://github.com/theos/theos.git ~/theos
           
-          # Folosim compilatorul existent în sistem
+          # Setup Toolchain folosind clang-ul din sistem
           mkdir -p ~/theos/toolchain/linux/iphone/bin
           ln -s $(which clang) ~/theos/toolchain/linux/iphone/bin/clang
           ln -s $(which clang++) ~/theos/toolchain/linux/iphone/bin/clang++
           
-          # Ștergem folderul de SDK existent pentru a evita eroarea "already exists"
+          # Setup SDK (curățăm folderul existent pentru a evita eroarea "already exists")
           rm -rf ~/theos/sdks
           git clone --depth 1 https://github.com/theos/sdks.git ~/theos/sdks
           
@@ -37,10 +36,14 @@ jobs:
       - name: Build Package
         run: |
           export THEOS=~/theos
-          # Găsește automat primul SDK disponibil
+          # Identificăm SDK-ul
           SDK_PATH=$(ls -d ~/theos/sdks/iPhoneOS*.sdk | head -n 1)
-          cd template && make package FINALPACKAGE=1 SYSROOT=$SDK_PATH
-
+          cd template
+          # Ștergem cache-ul anterior pentru a elimina erorile de module
+          rm -rf .theos
+          # Compilăm forțând dezactivarea modulelor (rezolvă eroarea IOSurface/OpenGLES)
+          make package FINALPACKAGE=1 SYSROOT=$SDK_PATH ADDITIONAL_CFLAGS="-fno-modules" ADDITIONAL_OBJCCFLAGS="-fno-modules"
+          
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
