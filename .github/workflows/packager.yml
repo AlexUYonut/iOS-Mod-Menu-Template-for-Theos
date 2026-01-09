@@ -11,15 +11,17 @@ jobs:
   packager:
     runs-on: ubuntu-latest
 
-        steps:
+            steps:
       - uses: actions/checkout@v4
 
       - name: Setup Theos
         uses: theos/setup-theos@v1
         with:
           theos-src: https://github.com/theos/theos.git
+          theos-ref: master
 
-      
+      - name: Make NIC package
+
     - name: Get version
       run: echo "VERSION=$(cat ./template/versionCheck.sh | sed -n 2p | tail -c 7 | head -c 5)" >> $GITHUB_ENV
 
