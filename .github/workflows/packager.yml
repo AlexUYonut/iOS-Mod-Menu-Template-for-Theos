@@ -1,12 +1,12 @@
 name: Auto NIC packager
 
-# On every push
 on:
   push:
     branches: [ master ]
     paths:
       - "template/*"
 
+jobs:
   packager:
     runs-on: ubuntu-latest
 
