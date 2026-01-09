@@ -15,11 +15,15 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y fakeroot git perl clang
+          sudo apt-get install -y fakeroot git perl clang curl
 
       - name: Setup Theos
         run: |
           git clone --recursive https://github.com/theos/theos.git ~/theos
+          # Instalăm Toolchain-ul (Rezolvă eroarea: clang No such file or directory)
+          curl -LO https://github.com/theos/toolchain/releases/download/linux-arm64/toolchain-linux-arm64.tar.gz
+          tar -xf toolchain-linux-arm64.tar.gz -C ~/theos/toolchain
+          # Instalăm SDK-urile
           rm -rf ~/theos/sdks
           git clone --depth 1 https://github.com/theos/sdks.git ~/theos/sdks
           echo "THEOS=~/theos" >> $GITHUB_ENV
@@ -28,9 +32,8 @@ jobs:
       - name: Build Package
         run: |
           export THEOS=~/theos
-          # Caută automat orice SDK de iPhone disponibil
+          # Găsim automat orice SDK de iPhone avem
           SDK_PATH=$(ls -d ~/theos/sdks/iPhoneOS*.sdk | head -n 1)
-          echo "Using SDK at: $SDK_PATH"
           cd template && make package FINALPACKAGE=1 SYSROOT=$SDK_PATH
 
       - name: Upload Artifact
