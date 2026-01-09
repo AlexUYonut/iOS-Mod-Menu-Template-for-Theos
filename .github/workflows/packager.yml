@@ -15,15 +15,15 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y fakeroot git perl clang curl tar
+          sudo apt-get install -y fakeroot git perl clang curl
 
       - name: Setup Theos
         run: |
           git clone --recursive https://github.com/theos/theos.git ~/theos
-          # Descarcă Toolchain-ul corect pentru GitHub Actions (x86_64)
-          curl -L https://github.com/theos/toolchain/releases/download/linux-x86_64/toolchain-linux-x86_64.tar.gz -o toolchain.tar.gz
+          # Download Toolchain corect
+          curl -LO https://github.com/sbingner/llvm-project/releases/download/v10.0.0-1-92281/iphoneos-arm64-toolchain-linux-x86_64.tar.lzma
           mkdir -p ~/theos/toolchain/linux/iphone
-          tar -xf toolchain.tar.gz -C ~/theos/toolchain/linux/iphone --strip-components=1
+          tar -xf iphoneos-arm64-toolchain-linux-x86_64.tar.lzma -C ~/theos/toolchain/linux/iphone --strip-components=1
           # Setup SDK
           rm -rf ~/theos/sdks
           git clone --depth 1 https://github.com/theos/sdks.git ~/theos/sdks
@@ -33,7 +33,6 @@ jobs:
       - name: Build Package
         run: |
           export THEOS=~/theos
-          # Identifică automat SDK-ul de iPhone
           SDK_PATH=$(ls -d ~/theos/sdks/iPhoneOS*.sdk | head -n 1)
           cd template && make package FINALPACKAGE=1 SYSROOT=$SDK_PATH
 
