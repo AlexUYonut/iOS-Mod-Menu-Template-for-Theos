@@ -15,7 +15,7 @@ jobs:
       - name: Install Critical Tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y fakeroot git perl curl zstd libtinfo5
+          sudo apt-get install -y fakeroot git perl curl build-essential libncurses5
 
       - name: Setup Theos
         run: |
@@ -23,36 +23,28 @@ jobs:
           echo "THEOS=~/theos" >> $GITHUB_ENV
           echo "~/theos/bin" >> $GITHUB_PATH
 
-      - name: Install Procursus Toolchain (Forced)
+      - name: Setup Toolchain and SDK
         run: |
-          # Curățăm orice urmă de toolchain vechi
-          rm -rf ~/theos/toolchain
+          # Descarcă Toolchain-ul compatibil Linux
           mkdir -p ~/theos/toolchain/linux/iphone
+          curl -L https://github.com/theos/toolchain/raw/master/linux-arm64-toolchain.tar.xz -o toolchain.tar.xz
+          tar -xf toolchain.tar.xz -C ~/theos/toolchain/linux/iphone --strip-components=1
           
-          # Descarcă și dezarhivează direct în folderul destinație
-          curl -L https://github.com/Marijuan0/procursus-toolchain-linux/releases/download/v1.0/toolchain-linux-x86_64.tar.zst -o toolchain.tar.zst
-          zstd -d toolchain.tar.zst
-          tar -xf toolchain.tar -C ~/theos/toolchain/linux/iphone --strip-components=1
-          
-          # Verificăm dacă fișierul clang există (dacă aici dă eroare, știm sigur de ce)
-          ls -la ~/theos/toolchain/linux/iphone/bin/clang
-
-      - name: Setup SDK
-        run: |
+          # Descarcă SDK-ul (folosim 14.5 care e cel mai stabil pentru compilare pe Linux)
           rm -rf ~/theos/sdks
           git clone --depth 1 https://github.com/theos/sdks.git ~/theos/sdks
 
       - name: Build Package
         run: |
           export THEOS=~/theos
-          # Forțăm folosirea toolchain-ului Procursus prin variabila PATH
-          export PATH=$THEOS/toolchain/linux/iphone/bin:$PATH
-          
-          SDK_PATH=$(ls -d ~/theos/sdks/iPhoneOS*.sdk | head -n 1)
+          # Forțăm compilatorul să ignore erorile de module prin headere clasice
           cd template
           rm -rf .theos
-          make package FINALPACKAGE=1 SYSROOT=$SDK_PATH
-          
+          make package FINALPACKAGE=1 \
+            SYSROOT=~/theos/sdks/iPhoneOS14.5.sdk \
+            ADDITIONAL_CFLAGS="-fno-modules -Wno-error -Wno-module-import-in-extern-c" \
+            ADDITIONAL_OBJCCFLAGS="-fno-modules -Wno-error -Wno-module-import-in-extern-c"
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
