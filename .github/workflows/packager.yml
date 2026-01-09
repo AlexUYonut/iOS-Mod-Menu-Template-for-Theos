@@ -16,26 +16,25 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y clang lld
-          # Descărcăm ldid manual pentru a evita eroarea "Unable to locate package"
           sudo curl -L https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus7/ldid_linux_x86_64 -o /usr/local/bin/ldid
           sudo chmod +x /usr/local/bin/ldid
 
       - name: Setup iOS SDK (No Tar/Xz)
         run: |
-          # Clonăm SDK-ul direct pentru a evita eroarea "File format not recognized"
           git clone --depth 1 https://github.com/theos/sdks.git sdks
           echo "SDK_PATH=$GITHUB_WORKSPACE/sdks/iPhoneOS14.5.sdk" >> $GITHUB_ENV
 
       - name: Compile Tweak.xm to Dylib
         run: |
-          # Folosim target-ul corect pentru arm64 pentru a evita eroarea de arhitectură
-          # Forțăm linker-ul lld pentru a evita eroarea de emulare mode
+          # REZOLVARE EROARE 09:34 ('vector' not found)
+          # Adăugăm calea explicită către headerele de C++ din interiorul SDK-ului
           clang++ -target arm64-apple-ios14.0 \
             -fuse-ld=lld \
             -dynamiclib \
             -isysroot ${{ env.SDK_PATH }} \
             -O2 -fno-modules -Wno-error \
             -stdlib=libc++ \
+            -isystem ${{ env.SDK_PATH }}/usr/include/c++/v1 \
             -framework Foundation -framework UIKit -framework CoreGraphics -framework QuartzCore \
             -I./template \
             -I./template/KittyMemory \
