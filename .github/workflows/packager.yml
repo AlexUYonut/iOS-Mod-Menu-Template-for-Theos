@@ -15,24 +15,21 @@ jobs:
       - name: Install Compiler Tools
         run: |
           sudo apt-get update
-          # Instalăm doar clang și lld
-          sudo apt-get install -y clang lld unzip
-          # Descărcăm ldid pentru semnarea binarului (evităm eroarea de la 09:13)
+          sudo apt-get install -y clang lld
+          # Descărcăm ldid manual pentru a evita eroarea "Unable to locate package"
           sudo curl -L https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus7/ldid_linux_x86_64 -o /usr/local/bin/ldid
           sudo chmod +x /usr/local/bin/ldid
 
-      - name: Setup Complete iOS SDK
+      - name: Setup iOS SDK (No Tar/Xz)
         run: |
-          # Descărcăm un SDK gata pregătit care include librăriile C++
-          mkdir -p sdks
-          curl -L https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz -o sdk.tar.xz
-          tar -xf sdk.tar.xz -C sdks
+          # Clonăm SDK-ul direct pentru a evita eroarea "File format not recognized"
+          git clone --depth 1 https://github.com/theos/sdks.git sdks
           echo "SDK_PATH=$GITHUB_WORKSPACE/sdks/iPhoneOS14.5.sdk" >> $GITHUB_ENV
 
       - name: Compile Tweak.xm to Dylib
         run: |
-          # Compilăm direct Tweak.xm
-          # Am scos legăturile către folderele de Linux care dădeau eroarea de la 09:29
+          # Folosim target-ul corect pentru arm64 pentru a evita eroarea de arhitectură
+          # Forțăm linker-ul lld pentru a evita eroarea de emulare mode
           clang++ -target arm64-apple-ios14.0 \
             -fuse-ld=lld \
             -dynamiclib \
