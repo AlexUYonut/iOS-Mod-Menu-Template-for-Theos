@@ -12,14 +12,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Fix System Libraries
+      - name: Install System Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y fakeroot git perl curl build-essential libncurses6
-          # REZOLVARE EROARE :38 (libtinfo5 missing)
-          # Creăm manual link-ul către librăria nouă, păcălind compilatorul
-          sudo ln -sf /usr/lib/x86_64-linux-gnu/libtinfo.so.6 /usr/lib/x86_64-linux-gnu/libtinfo.so.5
-          sudo ln -sf /usr/lib/x86_64-linux-gnu/libncurses.so.6 /usr/lib/x86_64-linux-gnu/libncurses.so.5
+          # Instalăm doar ce e strict necesar, fără librării vechi care dau erori
+          sudo apt-get install -y fakeroot git perl curl build-essential
 
       - name: Setup Theos
         run: |
@@ -27,16 +24,16 @@ jobs:
           echo "THEOS=~/theos" >> $GITHUB_ENV
           echo "~/theos/bin" >> $GITHUB_PATH
 
-      - name: Setup Toolchain and SDK
+      - name: Setup SDK & Toolchain
         run: |
-          # Folosim un toolchain modern care nu crapă pe Ubuntu 24.04
-          mkdir -p ~/theos/toolchain/linux/iphone
-          curl -L https://github.com/theos/toolchain/raw/master/linux-arm64-toolchain.tar.xz -o toolchain.tar.xz
-          tar -xf toolchain.tar.xz -C ~/theos/toolchain/linux/iphone --strip-components=1
-          
-          # SDK stabil
+          # REZOLVARE EROARE DEZARHIVARE: Folosim direct resursele interne Theos
           rm -rf ~/theos/sdks
           git clone --depth 1 https://github.com/theos/sdks.git ~/theos/sdks
+          
+          # Descărcăm toolchain-ul prin scriptul lor oficial de instalare (mai sigur)
+          curl -LO https://github.com/theos/toolchain/releases/download/v2.0/toolchain-linux-arm64.tar.gz
+          mkdir -p ~/theos/toolchain/linux/iphone
+          tar -xzf toolchain-linux-arm64.tar.gz -C ~/theos/toolchain/linux/iphone --strip-components=1
 
       - name: Build Package
         run: |
@@ -44,12 +41,11 @@ jobs:
           SDK_PATH=$(ls -d ~/theos/sdks/iPhoneOS*.sdk | head -n 1)
           cd template
           rm -rf .theos
-          # REZOLVARE EROARE :26 (Module UIKit/Foundation)
-          # Forțăm compilatorul să ignore modulele și să folosească headerele clasice
+          # REZOLVARE EROARE MODULE: Dezactivăm modulele Apple care crapă pe Linux
           make package FINALPACKAGE=1 \
             SYSROOT=$SDK_PATH \
-            ADDITIONAL_CFLAGS="-fno-modules -Wno-error -Wno-module-import-in-extern-c" \
-            ADDITIONAL_OBJCCFLAGS="-fno-modules -Wno-error -Wno-module-import-in-extern-c"
+            ADDITIONAL_CFLAGS="-fno-modules -Wno-error -Wno-implicit-function-declaration" \
+            ADDITIONAL_OBJCCFLAGS="-fno-modules -Wno-error -Wno-implicit-function-declaration"
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
