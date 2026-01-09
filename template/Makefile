@@ -52,7 +52,7 @@ ifeq ($(IGNORE_WARNINGS),1)
 endif
 
 
-OneStateMod_FILES = template/Tweak.xm $(MENU_SRC) $(SCLALERTVIEW_SRC) $(KITTYMEMORY_SRC)
+OneStateMod_FILES = Tweak.xm $(MENU_SRC) $(SCLALERTVIEW_SRC) $(KITTYMEMORY_SRC)
 
 OneStateMod_LIBRARIES += substrate
 
