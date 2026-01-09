@@ -11,15 +11,13 @@ jobs:
   packager:
     runs-on: ubuntu-latest
 
-    steps:
-    - uses: actions/checkout@v4
-      env:
-        VERSION: ""
-         - name: Setup Theos
+        steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Theos
         uses: theos/setup-theos@v1
         with:
           theos-src: https://github.com/theos/theos.git
-          theos-ref: master
 
       
     - name: Get version
