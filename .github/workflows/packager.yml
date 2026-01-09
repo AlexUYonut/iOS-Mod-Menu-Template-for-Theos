@@ -7,11 +7,10 @@ on:
     paths:
       - "template/*"
 
-jobs:
   packager:
     runs-on: ubuntu-latest
 
-            steps:
+    steps:
       - uses: actions/checkout@v4
 
       - name: Setup Theos
@@ -21,41 +20,11 @@ jobs:
           theos-ref: master
 
       - name: Make NIC package
+        run: |
+          $THEOS/bin/nicify.pl ./template
 
-    - name: Get version
-      run: echo "VERSION=$(cat ./template/versionCheck.sh | sed -n 2p | tail -c 7 | head -c 5)" >> $GITHUB_ENV
-
-    - name: Make NIC package
-      run: |
-        source ~/.profile
-        rm ./iOS-Mod-Menu-Template-for-Theos.nic.tar || true # To force it to not fail even if the file does not exist
-        $THEOS/bin/nicify.pl ./template
-        
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: "Ted2's Mod Menu Template v${{ env.VERSION }}.nic.tar"
-        path: "./Ted2's Mod Menu Template v${{ env.VERSION }}.nic.tar"
-        
-    - name: Create Release
-      id: create-release
-      uses: actions/create-release@latest
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ env.VERSION }}
-        release_name: Release ${{ env.VERSION }}
-        body: ""
-        draft: false
-        prerelease: false
-    
-    - name: Add Package to release
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create-release.outputs.upload_url }}
-        asset_path: "./Ted2's Mod Menu Template v${{ env.VERSION }}.nic.tar"
-        asset_name: "Ted2-Mod-Menu-Template v${{ env.VERSION }}.nic.tar"
-        asset_content_type: application/x-tar
-          
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: OneStateMod-Build
+          path: ./*.deb
