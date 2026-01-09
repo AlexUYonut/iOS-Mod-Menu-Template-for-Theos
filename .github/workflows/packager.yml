@@ -7,6 +7,7 @@ on:
 
 jobs:
   build:
+    # Folosim 22.04 pentru stabilitatea librăriilor C++
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
@@ -15,7 +16,9 @@ jobs:
       - name: Install Compiler Tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang lld unzip
+          # Instalăm pachetele necesare pentru compilare cross-platform
+          sudo apt-get install -y clang lld unzip libstdc++-12-dev
+          # Descărcăm ldid manual pentru semnarea finală
           sudo curl -L https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus7/ldid_linux_x86_64 -o /usr/local/bin/ldid
           sudo chmod +x /usr/local/bin/ldid
 
@@ -28,9 +31,9 @@ jobs:
 
       - name: Compile Tweak.xm to Dylib
         run: |
-          # REZOLVARE EROARE 09:22: 
-          # 1. Adăugăm '-x objective-c++' ca să recunoască fișierul .xm ca cod sursă
-          # 2. Schimbăm '-lstdc++' cu '-lc++' care este standardul Apple
+          # REZOLVARE EROARE 09:24:
+          # Adăugăm flag-ul '-stdlib=libc++' și forțăm path-ul către headerele C++
+          # Includem și folderele interne pentru KittyMemory/Menu
           clang++ -target arm64-apple-ios14.0 \
             -fuse-ld=lld \
             -dynamiclib \
@@ -39,6 +42,7 @@ jobs:
             -stdlib=libc++ \
             -framework Foundation -framework UIKit -framework CoreGraphics -framework QuartzCore \
             -I./template \
+            -I./template/KittyMemory \
             -x objective-c++ \
             -o OneStateMod.dylib \
             template/Tweak.xm
