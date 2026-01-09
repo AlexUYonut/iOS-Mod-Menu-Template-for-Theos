@@ -15,31 +15,36 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y fakeroot git perl curl
+          sudo apt-get install -y fakeroot git perl curl xz-utils
 
-      - name: Setup Theos and SDK
+      - name: Setup Theos
         run: |
           git clone --recursive https://github.com/theos/theos.git ~/theos
-          mkdir -p ~/theos/toolchain/linux/iphone/bin
-          ln -s $(which clang) ~/theos/toolchain/linux/iphone/bin/clang
-          ln -s $(which clang++) ~/theos/toolchain/linux/iphone/bin/clang++
-          rm -rf ~/theos/sdks
-          git clone --depth 1 https://github.com/theos/sdks.git ~/theos/sdks
           echo "THEOS=~/theos" >> $GITHUB_ENV
           echo "~/theos/bin" >> $GITHUB_PATH
+
+      - name: Setup Procursus Toolchain
+        run: |
+          # Descarcă toolchain-ul care rezolvă erorile de module Apple
+          curl -LO https://github.com/Marijuan0/procursus-toolchain-linux/releases/download/v1.0/toolchain-linux-x86_64.tar.zst
+          # Instalăm suport pentru formatul .zst și dezarhivăm
+          sudo apt-get install zstd
+          mkdir -p ~/theos/toolchain/linux/iphone
+          tar -I zstd -xf toolchain-linux-x86_64.tar.zst -C ~/theos/toolchain/linux/iphone --strip-components=1
+
+      - name: Setup SDK
+        run: |
+          rm -rf ~/theos/sdks
+          git clone --depth 1 https://github.com/theos/sdks.git ~/theos/sdks
 
       - name: Build Package
         run: |
           export THEOS=~/theos
           SDK_PATH=$(ls -d ~/theos/sdks/iPhoneOS*.sdk | head -n 1)
           cd template
-          
-          # AUTO-FIX pentru erorile de module:
-          # Schimbăm @import în #import în toate fișierele .h, .m, .mm, .xm
-          find . -type f \( -name "*.h" -o -name "*.m" -o -name "*.mm" -o -name "*.xm" \) -exec sed -i 's/@import \([^;]*\);/#import <\1\/\1.h>/g' {} +
-          
+          # Curățăm tot și compilăm cu toolchain-ul nou
           rm -rf .theos
-          make package FINALPACKAGE=1 SYSROOT=$SDK_PATH ADDITIONAL_CFLAGS="-fno-modules" ADDITIONAL_OBJCCFLAGS="-fno-modules"
+          make package FINALPACKAGE=1 SYSROOT=$SDK_PATH
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
