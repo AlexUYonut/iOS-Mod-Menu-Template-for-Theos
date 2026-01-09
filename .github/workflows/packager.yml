@@ -12,10 +12,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Base Tools
+      - name: Install Tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y fakeroot git perl curl build-essential
+          sudo apt-get install -y fakeroot git perl curl build-essential libncurses6
+          # Păcălim sistemul: creăm un link de la libtinfo.so.6 la .5 (rezolvă eroarea de la :38)
+          sudo ln -s /lib/x86_64-linux-gnu/libtinfo.so.6 /lib/x86_64-linux-gnu/libtinfo.so.5
 
       - name: Setup Theos
         run: |
@@ -25,23 +27,22 @@ jobs:
 
       - name: Setup Toolchain and SDK
         run: |
-          # Folosim un toolchain stabil care nu are nevoie de libtinfo5
+          # Toolchain oficial care este cel mai compatibil
           mkdir -p ~/theos/toolchain/linux/iphone
           curl -L https://github.com/theos/toolchain/raw/master/linux-arm64-toolchain.tar.xz -o toolchain.tar.xz
           tar -xf toolchain.tar.xz -C ~/theos/toolchain/linux/iphone --strip-components=1
           
-          # Luăm SDK-ul direct (curat)
+          # SDK 14.5 (cel mai stabil pentru Linux)
           rm -rf ~/theos/sdks
           git clone --depth 1 https://github.com/theos/sdks.git ~/theos/sdks
 
       - name: Build Package
         run: |
           export THEOS=~/theos
-          # Găsim SDK-ul descărcat
           SDK_PATH=$(ls -d ~/theos/sdks/iPhoneOS*.sdk | head -n 1)
           cd template
           rm -rf .theos
-          # Forțăm compilarea fără module pentru a evita eroarea UIKit/Foundation
+          # Forțăm compilarea fără module (rezolvă eroarea UIKit de la :26)
           make package FINALPACKAGE=1 \
             SYSROOT=$SDK_PATH \
             ADDITIONAL_CFLAGS="-fno-modules -Wno-error" \
