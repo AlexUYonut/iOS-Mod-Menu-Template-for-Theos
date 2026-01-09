@@ -24,10 +24,11 @@ jobs:
           echo "THEOS=~/theos" >> $GITHUB_ENV
           echo "~/theos/bin" >> $GITHUB_PATH
 
-      - name: Make NIC package
+      -       - name: Build Package
         run: |
           export THEOS=~/theos
-          $THEOS/bin/nicify.pl ./template
+          make package FINALPACKAGE=1
+
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
