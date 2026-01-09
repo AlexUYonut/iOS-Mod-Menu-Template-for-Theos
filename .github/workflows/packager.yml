@@ -15,7 +15,7 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y fakeroot git perl curl xz-utils
+          sudo apt-get install -y fakeroot git perl curl xz-utils zstd
 
       - name: Setup Theos
         run: |
@@ -25,10 +25,8 @@ jobs:
 
       - name: Setup Procursus Toolchain
         run: |
-          # Descarcă toolchain-ul care rezolvă erorile de module Apple
+          # Descarcă toolchain-ul profesional care rezolvă erorile de module Apple
           curl -LO https://github.com/Marijuan0/procursus-toolchain-linux/releases/download/v1.0/toolchain-linux-x86_64.tar.zst
-          # Instalăm suport pentru formatul .zst și dezarhivăm
-          sudo apt-get install zstd
           mkdir -p ~/theos/toolchain/linux/iphone
           tar -I zstd -xf toolchain-linux-x86_64.tar.zst -C ~/theos/toolchain/linux/iphone --strip-components=1
 
@@ -42,10 +40,10 @@ jobs:
           export THEOS=~/theos
           SDK_PATH=$(ls -d ~/theos/sdks/iPhoneOS*.sdk | head -n 1)
           cd template
-          # Curățăm tot și compilăm cu toolchain-ul nou
+          # Curățăm tot și compilăm cu noul toolchain
           rm -rf .theos
           make package FINALPACKAGE=1 SYSROOT=$SDK_PATH
-
+          
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
