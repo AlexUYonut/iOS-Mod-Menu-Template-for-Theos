@@ -8,43 +8,20 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Folosim o imagine de Docker care are deja Theos, Toolchain și SDK-uri incluse
+    container: ghcr.io/theos/theos:latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install System Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y fakeroot git perl curl build-essential libncurses6
-          # Forțăm compatibilitatea pentru librăriile lipsă
-          sudo ln -sf /usr/lib/x86_64-linux-gnu/libtinfo.so.6 /usr/lib/x86_64-linux-gnu/libtinfo.so.5
-
-      - name: Setup Theos
-        run: |
-          git clone --recursive https://github.com/theos/theos.git ~/theos
-          echo "THEOS=~/theos" >> $GITHUB_ENV
-          echo "~/theos/bin" >> $GITHUB_PATH
-
-      - name: Setup Toolchain & SDK
-        run: |
-          # Folosim un link stabil de toolchain în format .tar.gz (nu .xz care dădea eroare)
-          mkdir -p ~/theos/toolchain/linux/iphone
-          curl -L https://github.com/theos/toolchain/releases/download/v2.0/toolchain-linux-arm64.tar.gz -o toolchain.tar.gz
-          tar -xzf toolchain.tar.gz -C ~/theos/toolchain/linux/iphone --strip-components=1
-          
-          # SDK curat
-          rm -rf ~/theos/sdks
-          git clone --depth 1 https://github.com/theos/sdks.git ~/theos/sdks
-
       - name: Build Package
         run: |
-          export THEOS=~/theos
-          SDK_PATH=$(ls -d ~/theos/sdks/iPhoneOS*.sdk | head -n 1)
+          # În acest container, THEOS este deja setat corect
           cd template
-          rm -rf .theos
-          # REZOLVARE FINALE MODULE: Forțăm compilatorul să nu mai caute modulele Apple
+          
+          # Fix pentru erorile de module (dezactivăm modulele Apple)
+          # Și ignorăm avertismentele care blochează build-ul
           make package FINALPACKAGE=1 \
-            SYSROOT=$SDK_PATH \
             ADDITIONAL_CFLAGS="-fno-modules -Wno-error" \
             ADDITIONAL_OBJCCFLAGS="-fno-modules -Wno-error"
 
