@@ -15,19 +15,19 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y fakeroot git perl clang-10 llvm-10 lld-10 curl
+          sudo apt-get install -y fakeroot git perl curl
 
       - name: Setup Theos and SDK
         run: |
-          # Instalăm Theos
+          # Clonăm Theos
           git clone --recursive https://github.com/theos/theos.git ~/theos
           
-          # Creăm link-uri către compilatorul deja instalat (evităm descărcarea arhivelor corupte)
+          # Folosim compilatorul deja existent în sistem (fără download-uri)
           mkdir -p ~/theos/toolchain/linux/iphone/bin
-          ln -s /usr/bin/clang-10 ~/theos/toolchain/linux/iphone/bin/clang
-          ln -s /usr/bin/clang++-10 ~/theos/toolchain/linux/iphone/bin/clang++
+          ln -s $(which clang) ~/theos/toolchain/linux/iphone/bin/clang
+          ln -s $(which clang++) ~/theos/toolchain/linux/iphone/bin/clang++
           
-          # Descarcă SDK-ul
+          # Clonăm SDK-ul
           git clone --depth 1 https://github.com/theos/sdks.git ~/theos/sdks
           
           echo "THEOS=~/theos" >> $GITHUB_ENV
@@ -36,7 +36,7 @@ jobs:
       - name: Build Package
         run: |
           export THEOS=~/theos
-          # Găsește primul SDK disponibil
+          # Găsește automat SDK-ul descărcat
           SDK_PATH=$(ls -d ~/theos/sdks/iPhoneOS*.sdk | head -n 1)
           cd template && make package FINALPACKAGE=1 SYSROOT=$SDK_PATH
 
