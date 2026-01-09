@@ -21,7 +21,6 @@ jobs:
         run: |
           git clone --recursive https://github.com/theos/theos.git ~/theos
           rm -rf ~/theos/sdks
-          # Descarcă SDK-urile necesare pentru compilare
           git clone --depth 1 https://github.com/theos/sdks.git ~/theos/sdks
           echo "THEOS=~/theos" >> $GITHUB_ENV
           echo "~/theos/bin" >> $GITHUB_PATH
@@ -29,11 +28,13 @@ jobs:
       - name: Build Package
         run: |
           export THEOS=~/theos
-          # Forțăm folosirea oricărui SDK disponibil pentru a evita eroarea 11.2
-          cd template && make package FINALPACKAGE=1 SYSROOT=$THEOS/sdks/iPhoneOS.sdk
+          # Caută automat orice SDK de iPhone disponibil
+          SDK_PATH=$(ls -d ~/theos/sdks/iPhoneOS*.sdk | head -n 1)
+          echo "Using SDK at: $SDK_PATH"
+          cd template && make package FINALPACKAGE=1 SYSROOT=$SDK_PATH
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: OneStateMod-Build
-          path: template/*.deb
+          path: template/packages/*.deb
