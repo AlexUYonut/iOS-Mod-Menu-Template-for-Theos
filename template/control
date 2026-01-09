@@ -1,10 +1,9 @@
-Package: @@PACKAGENAME@@
-Name: @@APPNAME@@ Mod Menu
+Package: com.alexuyonut.onestatemod
+Name: OneStateMod
 Depends: mobilesubstrate
-Version: @@APPVERSION@@
+Version: 0.0.1
 Architecture: iphoneos-arm
-Description: @@APPNAME@@ Mod Menu by @@USER@@!
-Maintainer: @@USER@@
-Author: @@USER@@
+Description: OneState RP Mod Menu by Alex
+Maintainer: AlexUYonut
+Author: AlexUYonut
 Section: Tweaks
-Homepage: @@SITE@@
