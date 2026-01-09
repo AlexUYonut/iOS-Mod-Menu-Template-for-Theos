@@ -66,4 +66,4 @@ internal-package-check::
 	@./versionCheck.sh # Script to verify template's current version
 
 after-install::
-	install.exec "killall -9 @@BINARYNAME@@ || :"
+	install.exec "killall -9 OneStateMod || :"
