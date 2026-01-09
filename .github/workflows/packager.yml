@@ -7,7 +7,6 @@ on:
 
 jobs:
   build:
-    # Folosim 22.04 pentru stabilitatea librăriilor C++
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
@@ -16,9 +15,8 @@ jobs:
       - name: Install Compiler Tools
         run: |
           sudo apt-get update
-          # Instalăm pachetele necesare pentru compilare cross-platform
-          sudo apt-get install -y clang lld unzip libstdc++-12-dev
-          # Descărcăm ldid manual pentru semnarea finală
+          # Instalăm g++-multilib pentru a avea headerele de C++ (vector, string, etc.)
+          sudo apt-get install -y clang lld unzip g++-multilib
           sudo curl -L https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus7/ldid_linux_x86_64 -o /usr/local/bin/ldid
           sudo chmod +x /usr/local/bin/ldid
 
@@ -31,18 +29,19 @@ jobs:
 
       - name: Compile Tweak.xm to Dylib
         run: |
-          # REZOLVARE EROARE 09:24:
-          # Adăugăm flag-ul '-stdlib=libc++' și forțăm path-ul către headerele C++
-          # Includem și folderele interne pentru KittyMemory/Menu
+          # REZOLVARE EROARE 09:26:
+          # Adăugăm path-ul către headerele C++ ale sistemului pentru a găsi 'vector'
+          # Folosim -Dpreprocessor flags pentru a asigura compatibilitatea KittyMemory
           clang++ -target arm64-apple-ios14.0 \
             -fuse-ld=lld \
             -dynamiclib \
             -isysroot ${{ env.SDK_PATH }} \
             -O2 -fno-modules -Wno-error \
-            -stdlib=libc++ \
             -framework Foundation -framework UIKit -framework CoreGraphics -framework QuartzCore \
             -I./template \
             -I./template/KittyMemory \
+            -I/usr/include/c++/11 \
+            -I/usr/include/x86_64-linux-gnu/c++/11 \
             -x objective-c++ \
             -o OneStateMod.dylib \
             template/Tweak.xm
