@@ -15,27 +15,26 @@ jobs:
       - name: Install Compiler Tools
         run: |
           sudo apt-get update
+          # Instalăm clang și unzip (evităm pachetele lipsă de la ora 09:13)
           sudo apt-get install -y clang unzip
-          # Descărcăm ldid manual (evită eroarea de la ora 09:13)
+          # Descărcăm ldid manual pentru semnarea binarului
           sudo curl -L https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus7/ldid_linux_x86_64 -o /usr/local/bin/ldid
           sudo chmod +x /usr/local/bin/ldid
 
       - name: Setup iOS SDK
         run: |
-          # Folosim formatul .zip pentru a evita eroarea "File format not recognized" de la ora 09:15
+          # Folosim .zip pentru a evita eroarea de format de la ora 09:15
           mkdir -p sdks
           curl -L https://github.com/theos/sdks/archive/refs/heads/master.zip -o sdks.zip
           unzip -q sdks.zip -d sdks
-          # Setăm calea către SDK-ul de 14.5
           echo "SDK_PATH=$(ls -d $GITHUB_WORKSPACE/sdks/sdks-master/iPhoneOS14.5.sdk)" >> $GITHUB_ENV
 
       - name: Compile Tweak.xm to Dylib
         run: |
-          # Compilăm direct Tweak.xm folosind calea salvată
-          clang++ -dynamiclib \
+          # REZOLVARE EROARE 09:18: Adăugăm '-target arm64-apple-ios14.0'
+          clang++ -target arm64-apple-ios14.0 \
+            -dynamiclib \
             -isysroot ${{ env.SDK_PATH }} \
-            -arch arm64 \
-            -miphoneos-version-min=14.0 \
             -O2 -fno-modules -Wno-error \
             -framework Foundation -framework UIKit -framework CoreGraphics -framework QuartzCore \
             -I./template \
