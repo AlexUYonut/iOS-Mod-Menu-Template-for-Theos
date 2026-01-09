@@ -137,6 +137,8 @@ static void didFinishLaunching(CFNotificationCenterRef center, void *observer, C
 }
 
 
+
 %ctor {
   CFNotificationCenterAddObserver(CFNotificationCenterGetLocalCenter(), NULL, &didFinishLaunching, (CFStringRef)UIApplicationDidFinishLaunchingNotification, NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
+
 }
