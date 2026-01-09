@@ -7,28 +7,43 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04  # Forțăm o versiune mai stabilă de Ubuntu
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Theos environment
-        uses: theos/setup-theos@master
-
-      - name: Install SDK
+      - name: Install Dependencies
         run: |
-          # Descărcăm SDK-ul direct în folderul corect
-          mkdir -p $THEOS/sdks
-          curl -L https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz -o sdk.tar.xz
-          tar -xf sdk.tar.xz -C $THEOS/sdks
+          sudo apt-get update
+          sudo apt-get install -y fakeroot git perl curl build-essential
+
+      - name: Setup Theos
+        run: |
+          git clone --recursive https://github.com/theos/theos.git ~/theos
+          echo "THEOS=~/theos" >> $GITHUB_ENV
+          echo "~/theos/bin" >> $GITHUB_PATH
+
+      - name: Setup Toolchain & SDK
+        run: |
+          # REZOLVARE EROARE FORMAT: Folosim link-ul direct de Linux ARM64 (format .tar.gz)
+          mkdir -p ~/theos/toolchain/linux/iphone
+          curl -L https://github.com/theos/toolchain/releases/download/v2.0/toolchain-linux-arm64.tar.gz -o toolchain.tar.gz
+          tar -xzf toolchain.tar.gz -C ~/theos/toolchain/linux/iphone --strip-components=1
+          
+          # REZOLVARE EROARE SDK: Luăm SDK-ul de iOS 14.5 (cel mai compatibil)
+          rm -rf ~/theos/sdks
+          git clone --depth 1 https://github.com/theos/sdks.git ~/theos/sdks
 
       - name: Build Package
         run: |
+          export THEOS=~/theos
+          # Găsim calea exactă către SDK-ul descărcat
+          SDK_PATH=$(ls -d ~/theos/sdks/iPhoneOS*.sdk | head -n 1)
           cd template
-          # Curățăm tot și compilăm
           rm -rf .theos
+          # REZOLVARE EROARE UIKit: Dezactivăm modulele Apple care dau eroare pe Linux
           make package FINALPACKAGE=1 \
-            SYSROOT=$THEOS/sdks/iPhoneOS14.5.sdk \
+            SYSROOT=$SDK_PATH \
             ADDITIONAL_CFLAGS="-fno-modules -Wno-error" \
             ADDITIONAL_OBJCCFLAGS="-fno-modules -Wno-error"
 
