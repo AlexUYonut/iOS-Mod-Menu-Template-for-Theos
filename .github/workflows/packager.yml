@@ -15,33 +15,34 @@ jobs:
       - name: Install Compiler Tools
         run: |
           sudo apt-get update
-          # Instalăm g++-multilib pentru a avea headerele de C++ (vector, string, etc.)
-          sudo apt-get install -y clang lld unzip g++-multilib
+          # Instalăm doar clang și lld
+          sudo apt-get install -y clang lld unzip
+          # Descărcăm ldid pentru semnarea binarului (evităm eroarea de la 09:13)
           sudo curl -L https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus7/ldid_linux_x86_64 -o /usr/local/bin/ldid
           sudo chmod +x /usr/local/bin/ldid
 
-      - name: Setup iOS SDK
+      - name: Setup Complete iOS SDK
         run: |
+          # Descărcăm un SDK gata pregătit care include librăriile C++
           mkdir -p sdks
-          curl -L https://github.com/theos/sdks/archive/refs/heads/master.zip -o sdks.zip
-          unzip -q sdks.zip -d sdks
-          echo "SDK_PATH=$(ls -d $GITHUB_WORKSPACE/sdks/sdks-master/iPhoneOS14.5.sdk)" >> $GITHUB_ENV
+          curl -L https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz -o sdk.tar.xz
+          tar -xf sdk.tar.xz -C sdks
+          echo "SDK_PATH=$GITHUB_WORKSPACE/sdks/iPhoneOS14.5.sdk" >> $GITHUB_ENV
 
       - name: Compile Tweak.xm to Dylib
         run: |
-          # REZOLVARE EROARE 09:26:
-          # Adăugăm path-ul către headerele C++ ale sistemului pentru a găsi 'vector'
-          # Folosim -Dpreprocessor flags pentru a asigura compatibilitatea KittyMemory
+          # Compilăm direct Tweak.xm
+          # Am scos legăturile către folderele de Linux care dădeau eroarea de la 09:29
           clang++ -target arm64-apple-ios14.0 \
             -fuse-ld=lld \
             -dynamiclib \
             -isysroot ${{ env.SDK_PATH }} \
             -O2 -fno-modules -Wno-error \
+            -stdlib=libc++ \
             -framework Foundation -framework UIKit -framework CoreGraphics -framework QuartzCore \
             -I./template \
             -I./template/KittyMemory \
-            -I/usr/include/c++/11 \
-            -I/usr/include/x86_64-linux-gnu/c++/11 \
+            -I./template/Menu \
             -x objective-c++ \
             -o OneStateMod.dylib \
             template/Tweak.xm
