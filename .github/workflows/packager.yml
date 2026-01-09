@@ -20,7 +20,8 @@ jobs:
       - name: Setup Theos
         run: |
           git clone --recursive https://github.com/theos/theos.git ~/theos
-          # Descarcă SDK-ul de iOS (fără el nu poți face .deb)
+          # Aceasta linie șterge folderul gol și descarcă SDK-urile corect
+          rm -rf ~/theos/sdks
           git clone https://github.com/theos/sdks.git ~/theos/sdks
           echo "THEOS=~/theos" >> $GITHUB_ENV
           echo "~/theos/bin" >> $GITHUB_PATH
