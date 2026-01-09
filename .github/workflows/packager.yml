@@ -15,22 +15,12 @@ jobs:
     - uses: actions/checkout@v4
       env:
         VERSION: ""
-    - name: Install Theos
-      run: |
-        sudo apt-get install fakeroot git perl clang build-essential -y
-        echo "export THEOS=~/theos" >> ~/.profile
-        source ~/.profile
-        git clone --recursive https://github.com/theos/theos.git $THEOS
-        
-        curl https://kabiroberai.com/toolchain/download.php?toolchain=ios-linux -Lo toolchain.tar.gz
-        tar xzf toolchain.tar.gz -C $THEOS/toolchain
-        rm toolchain.tar.gz
-        
-        curl -LO https://github.com/theos/sdks/archive/master.zip
-        TMP=$(mktemp -d)
-        unzip master.zip -d $TMP
-        mv $TMP/sdks-master/*.sdk $THEOS/sdks
-        rm -r master.zip $TMP
+         - name: Setup Theos
+        uses: theos/setup-theos@v1
+        with:
+          theos-src: https://github.com/theos/theos.git
+          theos-ref: master
+
       
     - name: Get version
       run: echo "VERSION=$(cat ./template/versionCheck.sh | sed -n 2p | tail -c 7 | head -c 5)" >> $GITHUB_ENV
