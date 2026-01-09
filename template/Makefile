@@ -41,22 +41,22 @@ MENU_SRC = Menu.mm
 
 include $(THEOS)/makefiles/common.mk
 
-TWEAK_NAME = @@PROJECTNAME@@
+TWEAK_NAME = OneStateMod
 
-@@PROJECTNAME@@_CFLAGS = -fobjc-arc
-@@PROJECTNAME@@_CCFLAGS = -std=c++11 -fno-rtti -fno-exceptions -DNDEBUG
+OneStateMod_CFLAGS = -fobjc-arc
+OneStateMod_CCFLAGS = -std=c++11 -fno-rtti -fno-exceptions -DNDEBUG
 
 ifeq ($(IGNORE_WARNINGS),1)
-  @@PROJECTNAME@@_CFLAGS += -w
-  @@PROJECTNAME@@_CCFLAGS += -w
+  OneStateMod_CFLAGS += -w
+  OneStateMod_CCFLAGS += -w
 endif
 
 
-@@PROJECTNAME@@_FILES = Tweak.xm $(MENU_SRC) $(KITTYMEMORY_SRC) $(SCLALERTVIEW_SRC)
+OneStateMod_FILES = Tweak.xm $(MENU_SRC) $(KITTYMEMORY_SRC) $(SCLALERTVIEW_SRC)
 
-@@PROJECTNAME@@_LIBRARIES += substrate
+OneStateMod_LIBRARIES += substrate
 
-@@PROJECTNAME@@_FRAMEWORKS = $(PROJ_COMMON_FRAMEWORKS)
+OneStateMod_FRAMEWORKS = $(PROJ_COMMON_FRAMEWORKS)
 # GO_EASY_ON_ME = 1
 
 include $(THEOS_MAKE_PATH)/tweak.mk
