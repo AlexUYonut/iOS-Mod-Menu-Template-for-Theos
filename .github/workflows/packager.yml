@@ -12,10 +12,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Critical Tools
+      - name: Install Base Tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y fakeroot git perl curl build-essential libncurses5
+          sudo apt-get install -y fakeroot git perl curl build-essential
 
       - name: Setup Theos
         run: |
@@ -25,25 +25,27 @@ jobs:
 
       - name: Setup Toolchain and SDK
         run: |
-          # Descarcă Toolchain-ul compatibil Linux
+          # Folosim un toolchain stabil care nu are nevoie de libtinfo5
           mkdir -p ~/theos/toolchain/linux/iphone
           curl -L https://github.com/theos/toolchain/raw/master/linux-arm64-toolchain.tar.xz -o toolchain.tar.xz
           tar -xf toolchain.tar.xz -C ~/theos/toolchain/linux/iphone --strip-components=1
           
-          # Descarcă SDK-ul (folosim 14.5 care e cel mai stabil pentru compilare pe Linux)
+          # Luăm SDK-ul direct (curat)
           rm -rf ~/theos/sdks
           git clone --depth 1 https://github.com/theos/sdks.git ~/theos/sdks
 
       - name: Build Package
         run: |
           export THEOS=~/theos
-          # Forțăm compilatorul să ignore erorile de module prin headere clasice
+          # Găsim SDK-ul descărcat
+          SDK_PATH=$(ls -d ~/theos/sdks/iPhoneOS*.sdk | head -n 1)
           cd template
           rm -rf .theos
+          # Forțăm compilarea fără module pentru a evita eroarea UIKit/Foundation
           make package FINALPACKAGE=1 \
-            SYSROOT=~/theos/sdks/iPhoneOS14.5.sdk \
-            ADDITIONAL_CFLAGS="-fno-modules -Wno-error -Wno-module-import-in-extern-c" \
-            ADDITIONAL_OBJCCFLAGS="-fno-modules -Wno-error -Wno-module-import-in-extern-c"
+            SYSROOT=$SDK_PATH \
+            ADDITIONAL_CFLAGS="-fno-modules -Wno-error" \
+            ADDITIONAL_OBJCCFLAGS="-fno-modules -Wno-error"
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
