@@ -12,28 +12,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y fakeroot git perl clang curl
-
       - name: Setup Theos
+        uses: ms7m/install-theos@main
+
+      - name: Setup SDK
         run: |
-          git clone --recursive https://github.com/theos/theos.git ~/theos
-          # Download Toolchain corect
-          curl -LO https://github.com/sbingner/llvm-project/releases/download/v10.0.0-1-92281/iphoneos-arm64-toolchain-linux-x86_64.tar.lzma
-          mkdir -p ~/theos/toolchain/linux/iphone
-          tar -xf iphoneos-arm64-toolchain-linux-x86_64.tar.lzma -C ~/theos/toolchain/linux/iphone --strip-components=1
-          # Setup SDK
-          rm -rf ~/theos/sdks
-          git clone --depth 1 https://github.com/theos/sdks.git ~/theos/sdks
-          echo "THEOS=~/theos" >> $GITHUB_ENV
-          echo "~/theos/bin" >> $GITHUB_PATH
+          git clone --depth 1 https://github.com/theos/sdks.git $THEOS/sdks
 
       - name: Build Package
         run: |
-          export THEOS=~/theos
-          SDK_PATH=$(ls -d ~/theos/sdks/iPhoneOS*.sdk | head -n 1)
+          # Identificăm SDK-ul descărcat
+          SDK_PATH=$(ls -d $THEOS/sdks/iPhoneOS*.sdk | head -n 1)
           cd template && make package FINALPACKAGE=1 SYSROOT=$SDK_PATH
 
       - name: Upload Artifact
