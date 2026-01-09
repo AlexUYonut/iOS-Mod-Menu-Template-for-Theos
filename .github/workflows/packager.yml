@@ -7,7 +7,8 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # Schimbăm pe 22.04 pentru a evita erorile de linker de la ora 09:20
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -15,9 +16,9 @@ jobs:
       - name: Install Compiler Tools
         run: |
           sudo apt-get update
-          # Instalăm clang și unzip (evităm pachetele lipsă de la ora 09:13)
+          # Instalăm clang și unelte de bază
           sudo apt-get install -y clang unzip
-          # Descărcăm ldid manual pentru semnarea binarului
+          # Descărcăm ldid manual pentru a evita eroarea de la ora 09:13
           sudo curl -L https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus7/ldid_linux_x86_64 -o /usr/local/bin/ldid
           sudo chmod +x /usr/local/bin/ldid
 
@@ -31,8 +32,10 @@ jobs:
 
       - name: Compile Tweak.xm to Dylib
         run: |
-          # REZOLVARE EROARE 09:18: Adăugăm '-target arm64-apple-ios14.0'
+          # REZOLVARE EROARE 09:20: Forțăm linker-ul lld (intern Clang)
+          # Acest lucru elimină eroarea "unrecognised emulation mode"
           clang++ -target arm64-apple-ios14.0 \
+            -fuse-ld=lld \
             -dynamiclib \
             -isysroot ${{ env.SDK_PATH }} \
             -O2 -fno-modules -Wno-error \
