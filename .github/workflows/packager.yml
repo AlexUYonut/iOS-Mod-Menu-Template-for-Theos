@@ -13,16 +13,18 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Theos
-        uses: ms7m/install-theos@main
+        uses: theos/setup-theos@master
 
       - name: Setup SDK
         run: |
+          # Descarcă SDK-urile oficiale în folderul corect
           git clone --depth 1 https://github.com/theos/sdks.git $THEOS/sdks
 
       - name: Build Package
         run: |
-          # Identificăm SDK-ul descărcat
+          # Detectăm automat SDK-ul de iPhone
           SDK_PATH=$(ls -d $THEOS/sdks/iPhoneOS*.sdk | head -n 1)
+          echo "Using SDK: $SDK_PATH"
           cd template && make package FINALPACKAGE=1 SYSROOT=$SDK_PATH
 
       - name: Upload Artifact
