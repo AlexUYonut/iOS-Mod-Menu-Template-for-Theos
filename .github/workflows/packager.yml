@@ -15,26 +15,25 @@ jobs:
       - name: Install Compiler Tools
         run: |
           sudo apt-get update
-          # Instalăm doar clang, care este disponibil sigur
-          sudo apt-get install -y clang
-          
-          # Descarcăm ldid manual pentru a evita eroarea "Unable to locate package"
+          sudo apt-get install -y clang unzip
+          # Descărcăm ldid manual (evită eroarea de la ora 09:13)
           sudo curl -L https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus7/ldid_linux_x86_64 -o /usr/local/bin/ldid
           sudo chmod +x /usr/local/bin/ldid
 
       - name: Setup iOS SDK
         run: |
+          # Folosim formatul .zip pentru a evita eroarea "File format not recognized" de la ora 09:15
           mkdir -p sdks
-          # SDK 14.5 (format tar.xz - acum avem mediul pregătit să îl citească)
-          curl -L https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz -o sdk.tar.xz
-          tar -xf sdk.tar.xz -C sdks
+          curl -L https://github.com/theos/sdks/archive/refs/heads/master.zip -o sdks.zip
+          unzip -q sdks.zip -d sdks
+          # Setăm calea către SDK-ul de 14.5
+          echo "SDK_PATH=$(ls -d $GITHUB_WORKSPACE/sdks/sdks-master/iPhoneOS14.5.sdk)" >> $GITHUB_ENV
 
       - name: Compile Tweak.xm to Dylib
         run: |
-          # Compilăm direct Tweak.xm
-          # Folosim flag-uri care dezactivează modulele Apple pentru a evita erorile de compilare
+          # Compilăm direct Tweak.xm folosind calea salvată
           clang++ -dynamiclib \
-            -isysroot sdks/iPhoneOS14.5.sdk \
+            -isysroot ${{ env.SDK_PATH }} \
             -arch arm64 \
             -miphoneos-version-min=14.0 \
             -O2 -fno-modules -Wno-error \
@@ -45,7 +44,6 @@ jobs:
 
       - name: Sign Dylib
         run: |
-          # Folosim ldid-ul descărcat manual pentru a semna binarul
           ldid -S OneStateMod.dylib
 
       - name: Upload Dylib
