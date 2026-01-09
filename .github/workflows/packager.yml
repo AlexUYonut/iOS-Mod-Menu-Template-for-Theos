@@ -19,15 +19,16 @@ jobs:
 
       - name: Setup Theos and SDK
         run: |
-          # Clonăm Theos
+          # Instalăm Theos
           git clone --recursive https://github.com/theos/theos.git ~/theos
           
-          # Folosim compilatorul deja existent în sistem (fără download-uri)
+          # Folosim compilatorul existent în sistem
           mkdir -p ~/theos/toolchain/linux/iphone/bin
           ln -s $(which clang) ~/theos/toolchain/linux/iphone/bin/clang
           ln -s $(which clang++) ~/theos/toolchain/linux/iphone/bin/clang++
           
-          # Clonăm SDK-ul
+          # Ștergem folderul de SDK existent pentru a evita eroarea "already exists"
+          rm -rf ~/theos/sdks
           git clone --depth 1 https://github.com/theos/sdks.git ~/theos/sdks
           
           echo "THEOS=~/theos" >> $GITHUB_ENV
@@ -36,7 +37,7 @@ jobs:
       - name: Build Package
         run: |
           export THEOS=~/theos
-          # Găsește automat SDK-ul descărcat
+          # Găsește automat primul SDK disponibil
           SDK_PATH=$(ls -d ~/theos/sdks/iPhoneOS*.sdk | head -n 1)
           cd template && make package FINALPACKAGE=1 SYSROOT=$SDK_PATH
 
