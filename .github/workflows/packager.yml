@@ -1,4 +1,4 @@
-name: Auto NIC packager
+name: Direct Dylib Compiler
 on:
   push:
     branches:
@@ -12,43 +12,40 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Dependencies
+      - name: Install Compiler Tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y fakeroot git perl curl build-essential
+          # Instalăm doar compilatorul esențial, evitând pachetele vechi inexistente
+          sudo apt-get install -y clang ldid
 
-      - name: Setup Theos
+      - name: Setup iOS SDK
         run: |
-          git clone --recursive https://github.com/theos/theos.git ~/theos
-          echo "THEOS=~/theos" >> $GITHUB_ENV
-          echo "~/theos/bin" >> $GITHUB_PATH
+          mkdir -p sdks
+          # Descarcă SDK-ul 14.5 (stabil pentru arm64)
+          curl -L https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz -o sdk.tar.xz
+          tar -xf sdk.tar.xz -C sdks
 
-      - name: Setup Toolchain & SDK
+      - name: Compile Tweak.xm to Dylib
         run: |
-          # REZOLVARE EROARE FORMAT: Folosim link-ul direct de Linux ARM64 (format .tar.gz)
-          mkdir -p ~/theos/toolchain/linux/iphone
-          curl -L https://github.com/theos/toolchain/releases/download/v2.0/toolchain-linux-arm64.tar.gz -o toolchain.tar.gz
-          tar -xzf toolchain.tar.gz -C ~/theos/toolchain/linux/iphone --strip-components=1
-          
-          # REZOLVARE EROARE SDK: Luăm SDK-ul de iOS 14.5 (cel mai compatibil)
-          rm -rf ~/theos/sdks
-          git clone --depth 1 https://github.com/theos/sdks.git ~/theos/sdks
+          # Compilăm direct Tweak.xm folosind Clang
+          # Folosim flag-ul -fno-modules pentru a ignora erorile de module de la ora 08:26
+          clang++ -dynamiclib \
+            -isysroot sdks/iPhoneOS14.5.sdk \
+            -arch arm64 \
+            -miphoneos-version-min=14.0 \
+            -O2 -fno-modules -Wno-error \
+            -framework Foundation -framework UIKit -framework CoreGraphics -framework QuartzCore \
+            -I./template \
+            -o OneStateMod.dylib \
+            template/Tweak.xm
 
-      - name: Build Package
+      - name: Sign Dylib
         run: |
-          export THEOS=~/theos
-          # Găsim calea exactă către SDK-ul descărcat
-          SDK_PATH=$(ls -d ~/theos/sdks/iPhoneOS*.sdk | head -n 1)
-          cd template
-          rm -rf .theos
-          # REZOLVARE EROARE UIKit: Dezactivăm modulele Apple care dau eroare pe Linux
-          make package FINALPACKAGE=1 \
-            SYSROOT=$SDK_PATH \
-            ADDITIONAL_CFLAGS="-fno-modules -Wno-error" \
-            ADDITIONAL_OBJCCFLAGS="-fno-modules -Wno-error"
+          # Aplicăm semnătura digitală minimă pentru iOS
+          ldid -S OneStateMod.dylib
 
-      - name: Upload Artifact
+      - name: Upload Dylib
         uses: actions/upload-artifact@v4
         with:
-          name: OneStateMod-Build
-          path: template/packages/*.deb
+          name: OneStateMod-Dylib
+          path: OneStateMod.dylib
