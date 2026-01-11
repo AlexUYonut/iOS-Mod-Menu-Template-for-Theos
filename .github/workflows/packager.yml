@@ -1,54 +1,34 @@
-name: Direct Dylib Compiler
-on:
-  push:
-    branches:
-      - master
-  workflow_dispatch:
+name: Build Tweak
+on: [push, workflow_dispatch]
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: macos-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Compiler Tools
+      - name: Install Dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y clang lld
-          sudo curl -L https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus7/ldid_linux_x86_64 -o /usr/local/bin/ldid
-          sudo chmod +x /usr/local/bin/ldid
+          brew install ldid
+          git clone --recursive https://github.com/theos/theos.git ~/theos
+          echo "THEOS=$HOME/theos" >> $GITHUB_ENV
+          echo "$HOME/theos/bin" >> $GITHUB_PATH
 
-      - name: Setup iOS SDK (No Tar/Xz)
+      - name: Setup SDK
         run: |
-          git clone --depth 1 https://github.com/theos/sdks.git sdks
-          echo "SDK_PATH=$GITHUB_WORKSPACE/sdks/iPhoneOS14.5.sdk" >> $GITHUB_ENV
+          mkdir -p ~/theos/sdks
+          git clone --depth 1 https://github.com/theos/sdks.git temp_repo
+          mv temp_repo/iPhoneOS14.5.sdk ~/theos/sdks/
+          rm -rf temp_repo
 
-      - name: Compile Tweak.xm to Dylib
+      - name: Build Tweak
         run: |
-          # REZOLVARE EROARE 09:34 ('vector' not found)
-          # Adăugăm calea explicită către headerele de C++ din interiorul SDK-ului
-          clang++ -target arm64-apple-ios14.0 \
-            -fuse-ld=lld \
-            -dynamiclib \
-            -isysroot ${{ env.SDK_PATH }} \
-            -O2 -fno-modules -Wno-error \
-            -stdlib=libc++ \
-            -isystem ${{ env.SDK_PATH }}/usr/include/c++/v1 \
-            -framework Foundation -framework UIKit -framework CoreGraphics -framework QuartzCore \
-            -I./template \
-            -I./template/KittyMemory \
-            -I./template/Menu \
-            -x objective-c++ \
-            -o OneStateMod.dylib \
-            template/Tweak.xm
+          make clean
+          make package FINALPACKAGE=1
 
-      - name: Sign Dylib
-        run: |
-          ldid -S OneStateMod.dylib
-
-      - name: Upload Dylib
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: OneStateMod-Dylib
-          path: OneStateMod.dylib
+          name: OneState-Final-Build
+          path: packages/*.deb
