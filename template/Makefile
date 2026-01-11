@@ -29,6 +29,9 @@ ifeq ($(MOBILE_THEOS),1)
 else
   TARGET = iphone:clang:latest:8.0
 endif
+clean:
+	rm -rf Build/
+
 
 
 ## Common frameworks ##
